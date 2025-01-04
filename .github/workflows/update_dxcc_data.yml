@@ -1,0 +1,39 @@
+name: Update DXCC Fallback Data
+on:
+  schedule:
+    - cron: "5 18 * */1 *"
+  workflow_dispatch:
+
+jobs:
+  run_scripts:
+    if: github.repository == 'wavelog/dxcc_data'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          repository: wavelog/dxcc_data
+          ref: master
+
+      - name: Remove old file
+        run: |
+          rm cty.xml.gz
+
+      - name: Download new file
+        run: |
+          wget -O cty.xml.gz https://cdn.clublog.org/cty.php?api=608df94896cb9c5421ae748235492b43815610c9
+
+      - name: Commit changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          if [[ -n $(git status --porcelain) ]]; then
+            git add .
+            git commit -m "GH Action - Update DXCC Fallback Data"
+            git push
+          else
+            echo "No changes to commit."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
